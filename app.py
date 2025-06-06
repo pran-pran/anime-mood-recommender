@@ -34,7 +34,7 @@ personal_input = st.text_area(
 personal_list = [anime.strip() for anime in personal_input.split(",") if anime.strip()]
 
 #recommendation function
-def get_recommendation(mood, genre):
+def get_recommendation(mood, genre, n_personal=3, n_general=3):
     mood_genres = mood_genre_map.get(mood, [])
     filtered = anime_data.copy()
 
@@ -47,7 +47,7 @@ def get_recommendation(mood, genre):
 
     from_personal = []
     for anime in personal_list:
-        anime_row = anime_data[anime_data['name'] == anime]  # Use different variable here
+        anime_row = anime_data[anime_data['name'] == anime]
         if not anime_row.empty:
             genre_str = anime_row['genre'].values[0]
             if any(mg.lower() in genre_str.lower() for mg in mood_genres):
@@ -55,10 +55,17 @@ def get_recommendation(mood, genre):
 
     from_general = filtered[~filtered['name'].isin(personal_list)]
 
-    personal = random.choice(from_personal) if from_personal else "Nothing in your watchlist matched the vibe, sorryy!! :p"
-    general = random.choice(from_general['name'].tolist()) if not from_general.empty else "No new anime watched either, sorryy :p"
+    # Pick up to n_personal random from personal watchlist matches
+    personal_recs = random.sample(from_personal, min(n_personal, len(from_personal))) if from_personal else ["Nothing in your watchlist matched the vibe, sorryy!! :p"]
 
-    return personal, general
+    # Pick up to n_general random from general filtered list
+    if not from_general.empty:
+        general_list = from_general['name'].tolist()
+        general_recs = random.sample(general_list, min(n_general, len(general_list)))
+    else:
+        general_recs = ["No new anime watched either, sorryy :p"]
+
+    return personal_recs, general_recs
 
 #output
 if st.button("🎲 Recommend Me Something!"):
